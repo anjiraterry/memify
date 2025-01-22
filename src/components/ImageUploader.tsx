@@ -1,14 +1,15 @@
 "use client";
 
 import React, { useState } from "react";
-import { supabase } from "../utils/supabaseClient"; 
-import { FiImage } from "react-icons/fi"; 
+import { supabase } from "../utils/supabaseClient";
+import { FiImage } from "react-icons/fi";
 
 const ImageUploader: React.FC = () => {
   const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [prompt, setPrompt] = useState<string | null>(null);
   const [scenarios, setScenarios] = useState<string[]>([]);
+  const [generatedImages, setGeneratedImages] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -17,7 +18,8 @@ const ImageUploader: React.FC = () => {
       setImage(file);
       setImagePreview(URL.createObjectURL(file));
       setPrompt(null);
-      setScenarios([]); 
+      setScenarios([]);
+      setGeneratedImages([]);
     }
   };
 
@@ -107,6 +109,44 @@ const ImageUploader: React.FC = () => {
     }
   };
 
+  const generateImages = async () => {
+    if (!image || scenarios.length === 0) return;
+  
+    setIsLoading(true);
+  
+    try {
+      const publicUrl = await uploadToSupabase(image);  
+  
+      if (!publicUrl) {
+        throw new Error("Failed to upload image to Supabase");
+      }
+  
+      const generatedImagesPromises = scenarios.map(async (scenario) => {
+        const response = await fetch("/api/generate-images", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ imageUrl: publicUrl, scenario }),  
+        });
+  
+        const responseData = await response.json();
+  
+        if (!response.ok) {
+          throw new Error(responseData.error || "Failed to generate image");
+        }
+  
+        return responseData.generatedImageUrl;
+      });
+  
+      const images = await Promise.all(generatedImagesPromises);
+      setGeneratedImages(images);
+    } catch (error) {
+      console.error("Error generating images:", error);
+      alert("Failed to generate images. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   return (
     <div className="px-8 py-6 border rounded-2xl w-96 mx-auto shadow-lg">
       <label
@@ -163,6 +203,23 @@ const ImageUploader: React.FC = () => {
               <li key={index}>{index + 1}. {scenario}</li>
             ))}
           </ul>
+          <button
+            onClick={generateImages}
+            className="w-full mt-2 px-4 py-2 font-semibold rounded-lg bg-white text-black"
+          >
+            Generate Images
+          </button>
+        </div>
+      )}
+
+      {generatedImages.length > 0 && (
+        <div className="mt-4">
+          <h3 className="text-lg font-bold">Generated Images:</h3>
+          <div className="grid grid-cols-2 gap-4">
+            {generatedImages.map((image, index) => (
+              <img key={index} src={image} alt={`Scenario ${index + 1}`} className="rounded-lg" />
+            ))}
+          </div>
         </div>
       )}
     </div>
