@@ -24,8 +24,6 @@ export async function POST(req: NextRequest) {
 
     const apiKey = process.env.HUGGINGFACE_API_KEY;
 
-
-
     const response = await fetch(apiUrl, {
       method: "POST",
       headers: {
@@ -50,14 +48,13 @@ export async function POST(req: NextRequest) {
     const prompt = data[0].generated_text;
 
     return NextResponse.json({ prompt });
-  } catch (error: any) {
-    console.error("Error generating description:", error.message || error);
+  } catch (error: unknown) {
+    // Type narrowing for error
+    if (error instanceof Error) {
+      console.error("Error generating description:", error.message);
+    } else {
+      console.error("Unknown error occurred:", error);
+    }
     return NextResponse.json({ error: "Failed to generate description" }, { status: 500 });
   }
 }
-
-
-
-
-
-
