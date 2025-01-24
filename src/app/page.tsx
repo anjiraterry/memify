@@ -6,9 +6,9 @@ const Home: React.FC = () => {
     <div
       className="p-20 "
       style={{
-        backgroundColor: "#0B0B10", // Near-black with a hint of dark purple/blue
-        fontFamily: "'DM Sans', sans-serif", // Modern sans-serif font
-        color: "#EAEAEA", // Light text for readability
+        backgroundColor: "#0B0B10", 
+        fontFamily: "'DM Sans', sans-serif",
+        color: "#EAEAEA", 
       }}
     >
       <div className="h-full flex flex-col items-center justify-center">
