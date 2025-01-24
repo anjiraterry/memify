@@ -12,15 +12,9 @@ export async function POST(req: Request) {
       );
     }
 
-
-    const prompt = ` Scenario: ${scenario}`;
-    const image = imageUrl;
-
-   
+    const prompt = `Scenario: ${scenario}`;
     const replicateModelVersion =
-      "0827b64897df7b6e8c04625167bbb275b9db0f14ab09e2454b9824141963c966"; 
-
-    
+      "0827b64897df7b6e8c04625167bbb275b9db0f14ab09e2454b9824141963c966";
     const replicateApiKey = process.env.REPLICATE_API_KEY;
 
     if (!replicateApiKey) {
@@ -31,17 +25,16 @@ export async function POST(req: Request) {
       );
     }
 
-    
     const response = await fetch("https://api.replicate.com/v1/predictions", {
       method: "POST",
       headers: {
-        Authorization: `Token ${replicateApiKey}`, 
+        Authorization: `Token ${replicateApiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         version: replicateModelVersion,
         input: {
-          image,
+          image: imageUrl,
           prompt,
         },
       }),
@@ -51,11 +44,10 @@ export async function POST(req: Request) {
 
     console.log("Replicate API Response:", responseData);
 
-   
     if (!response.ok || !responseData.id) {
       console.error("Error starting image generation:", responseData);
       return NextResponse.json(
-        { error: "Failed to start image generation" },
+        { error: responseData.error || "Failed to start image generation" },
         { status: 500 }
       );
     }
@@ -64,9 +56,18 @@ export async function POST(req: Request) {
 
     let status = responseData.status;
     let imageUrlGenerated = "";
+    const timeout = 60000;
+    const startTime = Date.now();
 
     while (status !== "succeeded" && status !== "failed") {
-  
+      if (Date.now() - startTime > timeout) {
+        console.error("Image generation timed out");
+        return NextResponse.json(
+          { error: "Image generation timed out" },
+          { status: 500 }
+        );
+      }
+
       const statusResponse = await fetch(
         `https://api.replicate.com/v1/predictions/${predictionId}`,
         {
@@ -80,31 +81,37 @@ export async function POST(req: Request) {
       const statusData = await statusResponse.json();
       status = statusData.status;
 
+      console.log("Polling status:", statusData);
+
       if (status === "succeeded") {
-        imageUrlGenerated = statusData.output[0]; 
+        imageUrlGenerated = statusData.output[0];
         break;
       }
 
       if (status === "failed") {
-        console.error("Image generation failed");
+        console.error("Image generation failed:", statusData);
         return NextResponse.json(
           { error: "Image generation failed" },
           { status: 500 }
         );
       }
 
-      
+      if (status === "starting" || status === "processing") {
+        console.log(`Image generation is still in progress. Status: ${status}`);
+      }
+
       await new Promise((resolve) => setTimeout(resolve, 5000));
     }
 
     if (!imageUrlGenerated) {
+      console.error("Image generation did not complete successfully");
       return NextResponse.json(
         { error: "Image generation did not complete successfully" },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({generatedImageUrl: imageUrlGenerated });
+    return NextResponse.json({ generatedImageUrl: imageUrlGenerated });
   } catch (error) {
     console.error("Error generating image:", error);
     return NextResponse.json(
