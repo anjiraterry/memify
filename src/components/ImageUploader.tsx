@@ -148,10 +148,12 @@ const ImageUploader: React.FC = () => {
   };
   
   return (
-    <div className="px-8 py-6 border rounded-2xl w-96 mx-auto shadow-lg">
+    <div className="px-40 py-10 border rounded-2xl  mx-auto shadow-lg flex flex-col ">
+      <div className="flex items-center justify-center  ">
+      <div className="flex flex-col items-center justify-center">
       <label
         htmlFor="file-input"
-        className="cursor-pointer flex flex-col items-center justify-center border-dashed border-2 rounded-lg h-48"
+        className="cursor-pointer flex flex-col items-center justify-center border-dashed border-2 rounded-lg h-48 w-72"
       >
         {imagePreview ? (
           <img
@@ -171,7 +173,7 @@ const ImageUploader: React.FC = () => {
         type="file"
         accept="image/*"
         onChange={handleImageUpload}
-        className="hidden"
+        className="hidden "
       />
 
       <button
@@ -194,23 +196,27 @@ const ImageUploader: React.FC = () => {
           </button>
         </div>
       )}
-
+      </div>
+      <div >
       {scenarios.length > 0 && (
-        <div className="mt-4 p-4 border rounded">
+        <div className="ml-24">
           <h3 className="text-lg font-bold">Generated Scenarios:</h3>
           <ul>
             {scenarios.map((scenario, index) => (
-              <li key={index}>{index + 1}. {scenario}</li>
+              <li className="mt-4 p-4 border rounded" key={index}>{index + 1}. {scenario}</li>
             ))}
           </ul>
           <button
             onClick={generateImages}
-            className="w-full mt-2 px-4 py-2 font-semibold rounded-lg bg-white text-black"
+            className="w-full px-4 py-2 font-semibold mt-8 rounded-lg bg-white text-black"
           >
             Generate Images
           </button>
         </div>
       )}
+      </div>
+      </div>
+      <div>
 
       {generatedImages.length > 0 && (
         <div className="mt-4">
@@ -222,6 +228,7 @@ const ImageUploader: React.FC = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

@@ -4,7 +4,7 @@ import ImageUploader from "../components/ImageUploader";
 const Home: React.FC = () => {
   return (
     <div
-      className="h-screen p-40"
+      className="p-20 "
       style={{
         backgroundColor: "#0B0B10", // Near-black with a hint of dark purple/blue
         fontFamily: "'DM Sans', sans-serif", // Modern sans-serif font
