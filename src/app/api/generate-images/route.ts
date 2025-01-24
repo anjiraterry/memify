@@ -13,10 +13,9 @@ export async function POST(req: Request) {
     }
 
     const prompt = `
-      Transform the main character into the following scenario  Scenario: ${scenario} ,while keeping their  appearance, and key features intact. 
-      Retain the original art style, color palette and overall aesthetic of the base image.
-     
-      `;
+      Transform the main character into the following scenario  Scenario: ${scenario}, while keeping their appearance, and key features intact. 
+      Retain the original art style, color palette, and overall aesthetic of the base image.
+    `;
 
     const image = imageUrl;
 
@@ -33,7 +32,6 @@ export async function POST(req: Request) {
       );
     }
 
-  
     const response = await fetch("https://api.replicate.com/v1/predictions", {
       method: "POST",
       headers: {
@@ -49,7 +47,16 @@ export async function POST(req: Request) {
       }),
     });
 
-    const responseData = await response.json();
+    let responseData;
+    try {
+      responseData = await response.json();
+    } catch (error) {
+      console.error("Failed to parse Replicate API response as JSON:", error);
+      return NextResponse.json(
+        { error: "Invalid response from Replicate API" },
+        { status: 500 }
+      );
+    }
 
     if (!response.ok || !responseData.id) {
       console.error("Error starting image generation:", responseData);
@@ -63,7 +70,6 @@ export async function POST(req: Request) {
     let status = responseData.status;
     let imageUrlGenerated = "";
 
-   
     while (status !== "succeeded" && status !== "failed") {
       const statusResponse = await fetch(
         `https://api.replicate.com/v1/predictions/${predictionId}`,
@@ -75,23 +81,32 @@ export async function POST(req: Request) {
         }
       );
 
-      const statusData = await statusResponse.json();
+      let statusData;
+      try {
+        statusData = await statusResponse.json();
+      } catch (error) {
+        console.error("Failed to parse Replicate status response as JSON:", error);
+        return NextResponse.json(
+          { error: "Invalid status response from Replicate API" },
+          { status: 500 }
+        );
+      }
+
       status = statusData.status;
 
       if (status === "succeeded") {
-        imageUrlGenerated = statusData.output[0]; 
+        imageUrlGenerated = statusData.output[0];
         break;
       }
 
       if (status === "failed") {
-        console.error("Image generation failed");
+        console.error("Image generation failed", statusData);
         return NextResponse.json(
           { error: "Image generation failed" },
           { status: 500 }
         );
       }
 
-   
       await new Promise((resolve) => setTimeout(resolve, 5000));
     }
 
@@ -101,7 +116,6 @@ export async function POST(req: Request) {
         { status: 500 }
       );
     }
-
 
     return NextResponse.json({ generatedImageUrl: imageUrlGenerated });
   } catch (error) {

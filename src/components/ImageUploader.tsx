@@ -115,7 +115,7 @@ const ImageUploader: React.FC = () => {
     setIsLoading(true);
   
     try {
-      const publicUrl = await uploadToSupabase(image);  
+      const publicUrl = await uploadToSupabase(image);
   
       if (!publicUrl) {
         throw new Error("Failed to upload image to Supabase");
@@ -125,12 +125,19 @@ const ImageUploader: React.FC = () => {
         const response = await fetch("/api/generate-images", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ imageUrl: publicUrl, scenario }),  
+          body: JSON.stringify({ imageUrl: publicUrl, scenario }),
         });
   
-        const responseData = await response.json();
+        let responseData;
+        try {
+          responseData = await response.json();
+        } catch (error) {
+          console.error("Failed to parse backend response as JSON:", error);
+          throw new Error("Invalid response from the server");
+        }
   
         if (!response.ok) {
+          console.error("Error from server:", responseData);
           throw new Error(responseData.error || "Failed to generate image");
         }
   
@@ -146,6 +153,7 @@ const ImageUploader: React.FC = () => {
       setIsLoading(false);
     }
   };
+  
   
   return (
     <div className="px-40 py-10 border rounded-2xl  mx-auto shadow-lg flex flex-col ">
